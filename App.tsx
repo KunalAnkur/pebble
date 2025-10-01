@@ -4,9 +4,9 @@
  *
  * @format
  */
-
+import "./global.css";
 import { NewAppScreen } from '@react-native/new-app-screen';
-import { StatusBar, StyleSheet, useColorScheme, View } from 'react-native';
+import { StatusBar, StyleSheet, useColorScheme, View, Text } from 'react-native';
 import {
   SafeAreaProvider,
   useSafeAreaInsets,
@@ -27,11 +27,15 @@ function AppContent() {
   const safeAreaInsets = useSafeAreaInsets();
 
   return (
-    <View style={styles.container}>
-      <NewAppScreen
-        templateFileName="App.tsx"
-        safeAreaInsets={safeAreaInsets}
-      />
+    <View className="flex-1 bg-blue-50">
+      <View className="p-4 bg-white shadow-lg">
+        <Text className="text-2xl font-bold text-blue-600 text-center">
+          Welcome to Pebble
+        </Text>
+        <Text className="text-gray-600 text-center mt-2">
+          Your React Native app with Tailwind CSS
+        </Text>
+      </View>
     </View>
   );
 }

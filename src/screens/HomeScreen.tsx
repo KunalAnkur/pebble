@@ -1,105 +1,205 @@
-import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Screen } from '../types/navigation';
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  SafeAreaView,
+  StatusBar,
+  KeyboardAvoidingView,
+  Platform,
+  TouchableWithoutFeedback,
+  Keyboard,
+} from 'react-native';
+import { CategorySelection } from '../components/CategorySelector';
+import { DatePicker } from '../components/DatePicker';
+import { NoteInput } from '../components/NoteInput';
+import { NumericKeypad } from '../components/NumericKeypad';
 
-interface HomeScreenProps {
-  onNavigate: (screen: Screen) => void;
-}
+const ExpenseTrackerHome = () => {
+  const [activeTab, setActiveTab] = useState<'expense' | 'income'>('expense');
+  const [amount, setAmount] = useState('0');
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [note, setNote] = useState('');
+  const [selectedDate, setSelectedDate] = useState('');
+  const [selectedTime, setSelectedTime] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('');
 
-export default function HomeScreen({ onNavigate }: HomeScreenProps) {
+  // Initialize with current date and time
+  useEffect(() => {
+    const now = new Date();
+    const formatCurrentDate = (date: Date) => {
+      const today = new Date();
+      const yesterday = new Date(today);
+      yesterday.setDate(yesterday.getDate() - 1);
+      
+      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      
+      if (date.toDateString() === today.toDateString()) {
+        return 'Today, ' + date.getDate() + ' ' + monthNames[date.getMonth()];
+      } else if (date.toDateString() === yesterday.toDateString()) {
+        return 'Yesterday, ' + date.getDate() + ' ' + monthNames[date.getMonth()];
+      } else {
+        return date.getDate() + ' ' + monthNames[date.getMonth()] + ', ' + date.getFullYear();
+      }
+    };
+
+    const formatCurrentTime = (date: Date) => {
+      const period = date.getHours() >= 12 ? 'PM' : 'AM';
+      const displayHour = date.getHours() % 12 || 12;
+      const displayMinute = date.getMinutes().toString().padStart(2, '0');
+      return `${displayHour}:${displayMinute}${period}`;
+    };
+
+    setSelectedDate(formatCurrentDate(now));
+    setSelectedTime(formatCurrentTime(now));
+  }, []);
+
+  const handleNumberPress = (num: string) => {
+    if (amount === '0') {
+      setAmount(num);
+    } else {
+      setAmount(amount + num);
+    }
+  };
+
+  const handleDecimalPress = () => {
+    if (!amount.includes('.')) {
+      setAmount(amount + '.');
+    }
+  };
+
+  const handleBackspace = () => {
+    if (amount.length === 1) {
+      setAmount('0');
+    } else {
+      setAmount(amount.slice(0, -1));
+    }
+  };
+
+  const handleSubmit = () => {
+    console.log({
+      type: activeTab,
+      amount,
+      note,
+      date: selectedDate,
+      time: selectedTime,
+      category: selectedCategory,
+    });
+    // Reset form
+    setAmount('0');
+    setNote('');
+    Keyboard.dismiss();
+  };
+
+  const handleSelectDate = (date: string, time: string) => {
+    setSelectedDate(date);
+    setSelectedTime(time);
+    setShowDatePicker(false);
+  };
+
+  const handleSelectCategory = (category: string) => {
+    setSelectedCategory(category);
+  };
+
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#f8fafc' }}>
-      <ScrollView className="flex-1 bg-gray-50">
-        <View className="p-6">
-          {/* Welcome Header */}
-          <View className="bg-white rounded-lg p-6 mb-6 shadow-sm">
-            <Text className="text-3xl font-bold text-blue-600 mb-2">
-              Welcome to Pebble
-            </Text>
-            <Text className="text-gray-600 text-lg">
-              Your React Native app with navigation
-            </Text>
-          </View>
+    <SafeAreaView className="flex-1 bg-black">
+      <StatusBar barStyle="light-content" backgroundColor="#000" />
 
-          {/* Features Section */}
-          <View className="bg-white rounded-lg p-6 shadow-sm mb-6">
-            <Text className="text-xl font-bold text-gray-800 mb-4">
-              Features
-            </Text>
-            <View className="space-y-3">
-              <View className="flex-row items-center">
-                <View className="w-2 h-2 bg-green-500 rounded-full mr-3" />
-                <Text className="text-gray-700">React Native</Text>
-              </View>
-              <View className="flex-row items-center">
-                <View className="w-2 h-2 bg-green-500 rounded-full mr-3" />
-                <Text className="text-gray-700">Tailwind CSS styling</Text>
-              </View>
-              <View className="flex-row items-center">
-                <View className="w-2 h-2 bg-green-500 rounded-full mr-3" />
-                <Text className="text-gray-700">TypeScript support</Text>
-              </View>
-              <View className="flex-row items-center">
-                <View className="w-2 h-2 bg-green-500 rounded-full mr-3" />
-                <Text className="text-gray-700">Safe Area handling</Text>
-              </View>
-              <View className="flex-row items-center">
-                <View className="w-2 h-2 bg-green-500 rounded-full mr-3" />
-                <Text className="text-gray-700">Simple Routing</Text>
-              </View>
-            </View>
-          </View>
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <View className="flex-1 px-4 pt-2">
+          {/* Header with close and refresh buttons */}
+          <View className="flex-row justify-between items-center mb-6">
+            <TouchableOpacity className="w-12 h-12 rounded-full bg-zinc-900 items-center justify-center">
+              <Text className="text-white text-xl">×</Text>
+            </TouchableOpacity>
 
-            {/* Navigation Cards */}
-            <View className="space-y-4">
-              <TouchableOpacity 
-                onPress={() => onNavigate('Profile')}
-                className="bg-white rounded-lg p-4 shadow-sm border border-gray-200"
+            {/* Tab Switcher: Disabled for now */}
+            {/* <View className="flex-row bg-zinc-900 rounded-full p-1">
+              <TouchableOpacity
+                onPress={() => setActiveTab('expense')}
+                className={`px-6 py-2 rounded-full ${activeTab === 'expense' ? 'bg-white' : 'bg-transparent'
+                  }`}
               >
-                <Text className="text-lg font-semibold text-gray-800 mb-1">
-                  Profile
-                </Text>
-                <Text className="text-gray-600">
-                  View and edit your profile information
+                <Text
+                  className={`font-semibold ${activeTab === 'expense' ? 'text-black' : 'text-gray-400'
+                    }`}
+                >
+                  Expense
                 </Text>
               </TouchableOpacity>
-
-              <TouchableOpacity 
-                onPress={() => onNavigate('Settings')}
-                className="bg-white rounded-lg p-4 shadow-sm border border-gray-200"
+              <TouchableOpacity
+                onPress={() => setActiveTab('income')}
+                className={`px-6 py-2 rounded-full ${activeTab === 'income' ? 'bg-white' : 'bg-transparent'
+                  }`}
               >
-                <Text className="text-lg font-semibold text-gray-800 mb-1">
-                  Settings
-                </Text>
-                <Text className="text-gray-600">
-                  Configure your app preferences
+                <Text
+                  className={`font-semibold ${activeTab === 'income' ? 'text-black' : 'text-gray-400'
+                    }`}
+                >
+                  Income
                 </Text>
               </TouchableOpacity>
+            </View> */}
+
+            <TouchableOpacity className="w-12 h-12 rounded-full bg-zinc-900 items-center justify-center">
+              <Text className="text-white text-lg">⟳</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Amount Display */}
+          <View className="items-center justify-center flex-1">
+            <View className="flex-row items-center">
+              <Text className="text-white text-7xl font-light mr-2">₹</Text>
+              <Text className="text-white text-7xl font-light">{amount}</Text>
+              {amount !== '0' && (
+                <TouchableOpacity
+                  onPress={handleBackspace}
+                  className="ml-4 w-12 h-12 rounded-full bg-zinc-800 items-center justify-center"
+                >
+                  <Text className="text-white text-lg">×</Text>
+                </TouchableOpacity>
+              )}
             </View>
 
-          {/* Quick Stats */}
-          <View className="mt-8 bg-white rounded-lg p-6 shadow-sm">
-            <Text className="text-xl font-bold text-gray-800 mb-4">
-              Quick Stats
-            </Text>
-            <View className="flex-row justify-around">
-                <View className="items-center">
-                  <Text className="text-2xl font-bold text-blue-600">3</Text>
-                  <Text className="text-gray-600 text-sm">Screens</Text>
-                </View>
-              <View className="items-center">
-                <Text className="text-2xl font-bold text-green-600">100%</Text>
-                <Text className="text-gray-600 text-sm">Ready</Text>
-              </View>
-              <View className="items-center">
-                <Text className="text-2xl font-bold text-purple-600">∞</Text>
-                <Text className="text-gray-600 text-sm">Potential</Text>
-              </View>
-            </View>
+            {/* Note Input Component */}
+            <NoteInput
+              note={note}
+              onChangeNote={setNote}
+              amount={amount}
+            />
           </View>
+
+            {/* Date and Category Selectors */}
+            <View className="flex-row mb-4 gap-3">
+              <DatePicker
+                selectedDate={selectedDate}
+                selectedTime={selectedTime}
+                visible={showDatePicker}
+                onPress={() => setShowDatePicker(true)}
+                onClose={() => setShowDatePicker(false)}
+                onSelectDate={handleSelectDate}
+              />
+              <CategorySelection
+                selectedCategory={selectedCategory}
+                visible={showCategoryModal}
+                onPress={() => setShowCategoryModal(true)}
+                onClose={() => setShowCategoryModal(false)}
+                onSelectCategory={handleSelectCategory}
+              />
+            </View>
+
+            {/* Numeric Keypad Component */}
+            <NumericKeypad
+              onNumberPress={handleNumberPress}
+              onDecimalPress={handleDecimalPress}
+              onSubmit={handleSubmit}
+            />
         </View>
-      </ScrollView>
+      </TouchableWithoutFeedback>
     </SafeAreaView>
   );
-}
+};
+
+export default ExpenseTrackerHome;

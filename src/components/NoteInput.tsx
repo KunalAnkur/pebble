@@ -33,7 +33,7 @@ export const NoteInput: React.FC<NoteInputProps> = ({
 
     return (
         <View className="mt-8">
-            <View className="px-4 py-3 rounded-full border border-zinc-700" style={{ alignSelf: 'flex-start' }}>
+            <View className="p-3 rounded-2xl border border-zinc-700" style={{ alignSelf: 'flex-start' }}>
                 <View className="flex-row items-center">
                     <Text className="text-gray-400 text-base mr-2">≡</Text>
                     <TextInput

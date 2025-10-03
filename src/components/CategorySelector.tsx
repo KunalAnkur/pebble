@@ -53,7 +53,7 @@ export const CategorySelection: React.FC<CategorySelectionProps> = ({
         <TouchableOpacity
           activeOpacity={1}
           onPress={onClose}
-          className="flex-1 justify-center items-end pr-4"
+          className="flex-1 justify-center items-center"
           style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
         >
           <View className="bg-zinc-800 rounded-2xl py-2 w-52" style={{ marginBottom: 280 }}>

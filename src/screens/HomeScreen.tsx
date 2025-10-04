@@ -10,7 +10,9 @@ import {
   TouchableWithoutFeedback,
   Keyboard,
   Alert,
+  ScrollView,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { CategorySelection } from '../components/CategorySelector';
@@ -19,6 +21,7 @@ import { NoteInput } from '../components/NoteInput';
 import { NumericKeypad } from '../components/NumericKeypad';
 import { useExpenseSubmission } from '../hooks/useExpenseSubmission';
 import { useExpenseContext } from '../context/ExpenseContext';
+import { getCategoryIcon } from '../utils/expenseUtils';
 import { RootStackParamList } from '../types/navigation';
 
 type ExpenseInputScreenNavigationProp = StackNavigationProp<RootStackParamList, 'ExpenseInput'>;
@@ -34,6 +37,10 @@ const ExpenseInputScreen: React.FC = () => {
   const [selectedTime, setSelectedTime] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedTimestamp, setSelectedTimestamp] = useState<number>(Date.now());
+  const [pinnedCategories, setPinnedCategories] = useState<string[]>([]);
+  
+  // Fallback in-memory storage for when AsyncStorage fails
+  const [fallbackStorage, setFallbackStorage] = useState<string[]>([]);
 
   // Context for refreshing dashboard
   const { triggerRefresh } = useExpenseContext();
@@ -76,6 +83,12 @@ const ExpenseInputScreen: React.FC = () => {
     setSelectedTime(formatCurrentTime(now));
     setSelectedTimestamp(now.getTime());
   }, []);
+
+  // Load pinned categories on mount
+  useEffect(() => {
+    loadPinnedCategories();
+  }, []);
+
 
   const handleNumberPress = (num: string) => {
     if (amount === '0') {
@@ -209,6 +222,59 @@ const ExpenseInputScreen: React.FC = () => {
     setSelectedCategory(category);
   };
 
+  const handlePinCategory = (category: string) => {
+    setPinnedCategories(prev => {
+      const newPinnedCategories = prev.includes(category)
+        ? prev.filter(cat => cat !== category)
+        : [...prev, category];
+      
+      // Save to storage
+      savePinnedCategories(newPinnedCategories);
+      
+      return newPinnedCategories;
+    });
+  };
+
+  const handlePinnedCategorySelect = (category: string) => {
+    setSelectedCategory(category);
+  };
+
+  // Load pinned categories from storage
+  const loadPinnedCategories = async () => {
+    try {
+      const saved = await AsyncStorage.getItem('pinnedCategories');
+      if (saved) {
+        const categories = JSON.parse(saved);
+        setPinnedCategories(categories);
+        setFallbackStorage(categories);
+        console.log('Loaded pinned categories from AsyncStorage:', categories);
+      } else {
+        // If no saved data, use fallback storage
+        setPinnedCategories(fallbackStorage);
+        console.log('Using fallback storage:', fallbackStorage);
+      }
+    } catch (error) {
+      console.error('Error loading pinned categories from AsyncStorage:', error);
+      // Use fallback storage if AsyncStorage fails
+      setPinnedCategories(fallbackStorage);
+      console.log('Using fallback storage due to AsyncStorage error:', fallbackStorage);
+    }
+  };
+
+  // Save pinned categories to storage
+  const savePinnedCategories = async (categories: string[]) => {
+    try {
+      await AsyncStorage.setItem('pinnedCategories', JSON.stringify(categories));
+      setFallbackStorage(categories);
+      console.log('Saved pinned categories to AsyncStorage:', categories);
+    } catch (error) {
+      console.error('Error saving pinned categories to AsyncStorage:', error);
+      // Use fallback storage if AsyncStorage fails
+      setFallbackStorage(categories);
+      console.log('Saved to fallback storage:', categories);
+    }
+  };
+
   return (
     <SafeAreaView className="flex-1 bg-black">
       <StatusBar barStyle="light-content" backgroundColor="#000" />
@@ -280,6 +346,39 @@ const ExpenseInputScreen: React.FC = () => {
             />
           </View>
 
+          {/* Pinned Categories Row */}
+          {pinnedCategories.length > 0 && (
+            <View className="mb-4">
+              <Text className="text-gray-400 text-sm mb-3 px-4">Pinned</Text>
+              <ScrollView 
+                horizontal 
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{ paddingHorizontal: 16 }}
+                className="mb-2"
+              >
+                <View className="flex-row gap-4">
+                  {pinnedCategories.map((category) => (
+                    <View key={category} className="items-center">
+                      <TouchableOpacity
+                        onPress={() => handlePinnedCategorySelect(category)}
+                        className={`w-16 h-16 rounded-full items-center justify-center ${
+                          selectedCategory === category ? 'bg-blue-500' : 'bg-zinc-800'
+                        }`}
+                      >
+                        <Text className="text-white text-2xl">
+                          {getCategoryIcon(category)}
+                        </Text>
+                      </TouchableOpacity>
+                      <Text className="text-white text-xs text-center mt-2">
+                        {category}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              </ScrollView>
+            </View>
+          )}
+
             {/* Date and Category Selectors */}
             <View className="flex-row mb-4 gap-3">
               <DatePicker
@@ -296,6 +395,8 @@ const ExpenseInputScreen: React.FC = () => {
                 onPress={() => setShowCategoryModal(true)}
                 onClose={() => setShowCategoryModal(false)}
                 onSelectCategory={handleSelectCategory}
+                pinnedCategories={pinnedCategories}
+                onPinCategory={handlePinCategory}
               />
             </View>
 

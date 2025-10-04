@@ -14,6 +14,8 @@ interface CategorySelectionProps {
   onPress: () => void;
   onClose: () => void;
   onSelectCategory: (category: string) => void;
+  pinnedCategories?: string[];
+  onPinCategory?: (category: string) => void;
 }
 
 const categories: Category[] = [
@@ -31,6 +33,8 @@ export const CategorySelection: React.FC<CategorySelectionProps> = ({
   onPress,
   onClose,
   onSelectCategory,
+  pinnedCategories = [],
+  onPinCategory,
 }) => {
   return (
     <>
@@ -56,20 +60,35 @@ export const CategorySelection: React.FC<CategorySelectionProps> = ({
           className="flex-1 justify-center items-center"
           style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
         >
-          <View className="bg-zinc-800 rounded-2xl py-2 w-52" style={{ marginBottom: 280 }}>
-            {categories.map((category, index) => (
-              <TouchableOpacity
-                key={category.id}
-                onPress={() => {
-                  onSelectCategory(category.name);
-                  onClose();
-                }}
-                className="flex-row items-center px-5 py-3"
-              >
-                <Text className="text-xl mr-3">{category.emoji}</Text>
-                <Text className="text-white text-base">{category.name}</Text>
-              </TouchableOpacity>
-            ))}
+          <View className="bg-zinc-800 rounded-2xl py-2 w-64" style={{ marginBottom: 280 }}>
+            {categories.map((category, index) => {
+              const isPinned = pinnedCategories.includes(category.name);
+              return (
+                <View key={category.id} className="flex-row items-center justify-between px-5 py-3">
+                  <TouchableOpacity
+                    onPress={() => {
+                      onSelectCategory(category.name);
+                      onClose();
+                    }}
+                    className="flex-row items-center flex-1"
+                  >
+                    <Text className="text-xl mr-3">{category.emoji}</Text>
+                    <Text className="text-white text-base">{category.name}</Text>
+                  </TouchableOpacity>
+                  
+                  {onPinCategory && (
+                    <TouchableOpacity
+                      onPress={() => onPinCategory(category.name)}
+                      className="ml-3 p-2"
+                    >
+                      <Text className={`text-lg ${isPinned ? 'text-yellow-400' : 'text-gray-400'}`}>
+                        {isPinned ? '📌' : '📍'}
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              );
+            })}
           </View>
         </TouchableOpacity>
       </Modal>

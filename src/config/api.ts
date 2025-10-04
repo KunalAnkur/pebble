@@ -2,7 +2,7 @@
 export const API_CONFIG = {
   // Base URL for your API
   // Change this to your actual API endpoint
-  BASE_URL: 'http://localhost:5000',
+  BASE_URL: 'https://api-pebble.onrender.com',
   
   // API Key (if required)
   // You can set this via environment variables or hardcode for development

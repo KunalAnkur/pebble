@@ -3,15 +3,16 @@
  * 
  * @format
  */
+import 'react-native-gesture-handler';
 import "./global.css";
-import React from 'react';
+import React, { useEffect } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import ExpenseTrackerHome from './src/screens/HomeScreen';
+import AppNavigator from './src/navigation/AppNavigator';
 
 export default function App() {
   return (
     <SafeAreaProvider>
-      <ExpenseTrackerHome />
+      <AppNavigator />
     </SafeAreaProvider>
   );
 }

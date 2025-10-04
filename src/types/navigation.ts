@@ -1,7 +1,8 @@
-export type Screen = 'Home' | 'Profile' | 'Settings';
+export type Screen = 'Dashboard' | 'ExpenseInput' | 'Profile' | 'Settings';
 
 export type RootStackParamList = {
-  Home: undefined;
+  Dashboard: undefined;
+  ExpenseInput: undefined;
   Profile: undefined;
   Settings: undefined;
 };

@@ -11,13 +11,19 @@ import {
   Keyboard,
   Alert,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
 import { CategorySelection } from '../components/CategorySelector';
 import { DatePicker } from '../components/DatePicker';
 import { NoteInput } from '../components/NoteInput';
 import { NumericKeypad } from '../components/NumericKeypad';
 import { useExpenseSubmission } from '../hooks/useExpenseSubmission';
+import { RootStackParamList } from '../types/navigation';
 
-const ExpenseTrackerHome = () => {
+type ExpenseInputScreenNavigationProp = StackNavigationProp<RootStackParamList, 'ExpenseInput'>;
+
+const ExpenseInputScreen: React.FC = () => {
+  const navigation = useNavigation<ExpenseInputScreenNavigationProp>();
   const [activeTab, setActiveTab] = useState<'expense' | 'income'>('expense');
   const [amount, setAmount] = useState('0');
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -206,7 +212,10 @@ const ExpenseTrackerHome = () => {
         <View className="flex-1 px-4 pt-2">
           {/* Header with close and refresh buttons */}
           <View className="flex-row justify-between items-center mb-6">
-            <TouchableOpacity className="w-12 h-12 rounded-full bg-zinc-900 items-center justify-center">
+            <TouchableOpacity 
+              onPress={() => navigation.goBack()}
+              className="w-12 h-12 rounded-full bg-zinc-900 items-center justify-center"
+            >
               <Text className="text-white text-xl">×</Text>
             </TouchableOpacity>
 
@@ -323,4 +332,4 @@ const ExpenseTrackerHome = () => {
   );
 };
 
-export default ExpenseTrackerHome;
+export default ExpenseInputScreen;

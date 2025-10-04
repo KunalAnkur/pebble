@@ -29,6 +29,18 @@ export interface ExpenseSubmissionResponse {
   updatedAt: string;
 }
 
+export interface Expense {
+  _id: string;
+  type: 'expense' | 'income';
+  amount: number;
+  note: string;
+  category: string;
+  date: string;
+  createdAt: string;
+  updatedAt: string;
+  __v: number;
+}
+
 class ApiService {
   private axiosInstance: AxiosInstance;
 
@@ -175,8 +187,8 @@ class ApiService {
   /**
    * Get all expenses for a user
    */
-  async getExpenses(): Promise<ApiResponse<ExpenseSubmissionResponse[]>> {
-    return this.makeRequest<ExpenseSubmissionResponse[]>('GET', '/expenses');
+  async getExpenses(): Promise<ApiResponse<Expense[]>> {
+    return this.makeRequest<Expense[]>('GET', '/expenses');
   }
 
   /**

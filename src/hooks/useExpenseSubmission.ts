@@ -10,7 +10,11 @@ interface UseExpenseSubmissionReturn {
   clearSuccess: () => void;
 }
 
-export const useExpenseSubmission = (): UseExpenseSubmissionReturn => {
+interface UseExpenseSubmissionProps {
+  onSuccess?: () => void;
+}
+
+export const useExpenseSubmission = (props?: UseExpenseSubmissionProps): UseExpenseSubmissionReturn => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -25,8 +29,8 @@ export const useExpenseSubmission = (): UseExpenseSubmissionReturn => {
       
       if (response.success) {
         setSuccess(true);
-        // Auto-clear success state after 3 seconds
-        setTimeout(() => setSuccess(false), 3000);
+        // Call onSuccess callback if provided
+        props?.onSuccess?.();
       } else {
         setError(response.error || 'Failed to submit expense');
       }

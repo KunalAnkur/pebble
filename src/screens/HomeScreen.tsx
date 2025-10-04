@@ -18,6 +18,7 @@ import { DatePicker } from '../components/DatePicker';
 import { NoteInput } from '../components/NoteInput';
 import { NumericKeypad } from '../components/NumericKeypad';
 import { useExpenseSubmission } from '../hooks/useExpenseSubmission';
+import { useExpenseContext } from '../context/ExpenseContext';
 import { RootStackParamList } from '../types/navigation';
 
 type ExpenseInputScreenNavigationProp = StackNavigationProp<RootStackParamList, 'ExpenseInput'>;
@@ -34,8 +35,15 @@ const ExpenseInputScreen: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedTimestamp, setSelectedTimestamp] = useState<number>(Date.now());
 
+  // Context for refreshing dashboard
+  const { triggerRefresh } = useExpenseContext();
+  
   // API submission hook
-  const { isSubmitting, error, success, submitExpense, clearError, clearSuccess } = useExpenseSubmission();
+  const { isSubmitting, error, success, submitExpense, clearError, clearSuccess } = useExpenseSubmission({
+    onSuccess: () => {
+      triggerRefresh(); // Refresh dashboard when expense is added
+    }
+  });
 
   // Initialize with current date and time
   useEffect(() => {
@@ -110,6 +118,7 @@ const ExpenseInputScreen: React.FC = () => {
       date: selectedTimestamp,
       category: selectedCategory,
     };
+    
     try {
       const response = await submitExpense(expenseData);
       
@@ -120,12 +129,8 @@ const ExpenseInputScreen: React.FC = () => {
         setSelectedCategory('');
         Keyboard.dismiss();
         
-        // Show success feedback
-        Alert.alert(
-          'Success!', 
-          'Your expense has been recorded successfully.',
-          [{ text: 'OK', onPress: clearSuccess }]
-        );
+        // Navigate back to dashboard without showing success alert
+        navigation.goBack();
       } else {
         // Error handling is done in the hook, but we can show additional feedback
         Alert.alert(
@@ -294,15 +299,7 @@ const ExpenseInputScreen: React.FC = () => {
               />
             </View>
 
-            {/* Success/Error Feedback */}
-            {success && (
-              <View className="mb-4 p-3 bg-green-900/20 border border-green-500/30 rounded-lg">
-                <Text className="text-green-400 text-center text-sm">
-                  ✓ Expense submitted successfully!
-                </Text>
-              </View>
-            )}
-            
+            {/* Error Feedback */}
             {error && (
               <View className="mb-4 p-3 bg-red-900/20 border border-red-500/30 rounded-lg">
                 <Text className="text-red-400 text-center text-sm">

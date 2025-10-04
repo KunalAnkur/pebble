@@ -6,12 +6,14 @@ interface NumericKeypadProps {
   onNumberPress: (num: string) => void;
   onDecimalPress: () => void;
   onSubmit: () => void;
+  isSubmitting?: boolean;
 }
 
 export const NumericKeypad: React.FC<NumericKeypadProps> = ({
   onNumberPress,
   onDecimalPress,
   onSubmit,
+  isSubmitting = false,
 }) => {
   return (
     <View className="mb-6">
@@ -68,9 +70,16 @@ export const NumericKeypad: React.FC<NumericKeypadProps> = ({
 
         <TouchableOpacity
           onPress={onSubmit}
-          className="w-[30%] h-16 rounded-2xl bg-gray-600 items-center justify-center"
+          disabled={isSubmitting}
+          className={`w-[30%] h-16 rounded-2xl items-center justify-center ${
+            isSubmitting 
+              ? 'bg-gray-500 opacity-50' 
+              : 'bg-gray-600'
+          }`}
         >
-          <Text className="text-white text-2xl">✓</Text>
+          <Text className="text-white text-2xl">
+            {isSubmitting ? '...' : '✓'}
+          </Text>
         </TouchableOpacity>
       </View>
     </View>

@@ -9,11 +9,13 @@ import {
   Platform,
   TouchableWithoutFeedback,
   Keyboard,
+  Alert,
 } from 'react-native';
 import { CategorySelection } from '../components/CategorySelector';
 import { DatePicker } from '../components/DatePicker';
 import { NoteInput } from '../components/NoteInput';
 import { NumericKeypad } from '../components/NumericKeypad';
+import { useExpenseSubmission } from '../hooks/useExpenseSubmission';
 
 const ExpenseTrackerHome = () => {
   const [activeTab, setActiveTab] = useState<'expense' | 'income'>('expense');
@@ -24,6 +26,10 @@ const ExpenseTrackerHome = () => {
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedTime, setSelectedTime] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
+  const [selectedTimestamp, setSelectedTimestamp] = useState<number>(Date.now());
+
+  // API submission hook
+  const { isSubmitting, error, success, submitExpense, clearError, clearSuccess } = useExpenseSubmission();
 
   // Initialize with current date and time
   useEffect(() => {
@@ -54,6 +60,7 @@ const ExpenseTrackerHome = () => {
 
     setSelectedDate(formatCurrentDate(now));
     setSelectedTime(formatCurrentTime(now));
+    setSelectedTimestamp(now.getTime());
   }, []);
 
   const handleNumberPress = (num: string) => {
@@ -78,24 +85,112 @@ const ExpenseTrackerHome = () => {
     }
   };
 
-  const handleSubmit = () => {
-    console.log({
+  const handleSubmit = async () => {
+    // Validate required fields
+    if (amount === '0' || parseFloat(amount) <= 0) {
+      Alert.alert('Invalid Amount', 'Please enter a valid amount greater than 0.');
+      return;
+    }
+
+    if (!selectedCategory) {
+      Alert.alert('Category Required', 'Please select a category for this expense.');
+      return;
+    }
+
+    const expenseData = {
       type: activeTab,
       amount,
       note,
-      date: selectedDate,
-      time: selectedTime,
+      date: selectedTimestamp,
       category: selectedCategory,
-    });
-    // Reset form
-    setAmount('0');
-    setNote('');
-    Keyboard.dismiss();
+    };
+    try {
+      const response = await submitExpense(expenseData);
+      
+      if (response.success) {
+        // Reset form on successful submission
+        setAmount('0');
+        setNote('');
+        setSelectedCategory('');
+        Keyboard.dismiss();
+        
+        // Show success feedback
+        Alert.alert(
+          'Success!', 
+          'Your expense has been recorded successfully.',
+          [{ text: 'OK', onPress: clearSuccess }]
+        );
+      } else {
+        // Error handling is done in the hook, but we can show additional feedback
+        Alert.alert(
+          'Submission Failed', 
+          response.error || 'Failed to submit expense. Please try again.',
+          [{ text: 'OK', onPress: clearError }]
+        );
+      }
+    } catch (err) {
+      console.error('Submit error:', err);
+      Alert.alert(
+        'Error', 
+        'An unexpected error occurred. Please try again.',
+        [{ text: 'OK', onPress: clearError }]
+      );
+    }
   };
 
   const handleSelectDate = (date: string, time: string) => {
     setSelectedDate(date);
     setSelectedTime(time);
+    
+    // Calculate timestamp from the selected date and time
+    // Parse the time string to get hour and minute
+    const timeMatch = time.match(/(\d+):(\d+)(AM|PM)/i);
+    if (timeMatch) {
+      let hour = parseInt(timeMatch[1]);
+      const minute = parseInt(timeMatch[2]);
+      const period = timeMatch[3].toUpperCase();
+      
+      // Convert to 24-hour format
+      if (period === 'PM' && hour !== 12) {
+        hour += 12;
+      } else if (period === 'AM' && hour === 12) {
+        hour = 0;
+      }
+      
+      // Parse the date string to get the actual date
+      let actualDate: Date;
+      if (date.startsWith('Today')) {
+        actualDate = new Date();
+      } else if (date.startsWith('Yesterday')) {
+        actualDate = new Date();
+        actualDate.setDate(actualDate.getDate() - 1);
+      } else {
+        // Parse date like "15 Jan, 2024" or "15 Jan"
+        const dateMatch = date.match(/(\d+)\s+(\w+)(?:,\s+(\d+))?/);
+        if (dateMatch) {
+          const day = parseInt(dateMatch[1]);
+          const monthName = dateMatch[2];
+          const year = dateMatch[3] ? parseInt(dateMatch[3]) : new Date().getFullYear();
+          
+          const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+            'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+          const monthIndex = monthNames.indexOf(monthName);
+          
+          if (monthIndex !== -1) {
+            actualDate = new Date(year, monthIndex, day);
+          } else {
+            actualDate = new Date();
+          }
+        } else {
+          actualDate = new Date();
+        }
+      }
+      
+      // Set the time on the date
+      actualDate.setHours(hour, minute, 0, 0);
+      setSelectedTimestamp(actualDate.getTime());
+    }
+    
     setShowDatePicker(false);
   };
 
@@ -190,11 +285,37 @@ const ExpenseTrackerHome = () => {
               />
             </View>
 
+            {/* Success/Error Feedback */}
+            {success && (
+              <View className="mb-4 p-3 bg-green-900/20 border border-green-500/30 rounded-lg">
+                <Text className="text-green-400 text-center text-sm">
+                  ✓ Expense submitted successfully!
+                </Text>
+              </View>
+            )}
+            
+            {error && (
+              <View className="mb-4 p-3 bg-red-900/20 border border-red-500/30 rounded-lg">
+                <Text className="text-red-400 text-center text-sm">
+                  {error}
+                </Text>
+                <TouchableOpacity 
+                  onPress={clearError}
+                  className="mt-2"
+                >
+                  <Text className="text-red-400 text-center text-xs underline">
+                    Dismiss
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
             {/* Numeric Keypad Component */}
             <NumericKeypad
               onNumberPress={handleNumberPress}
               onDecimalPress={handleDecimalPress}
               onSubmit={handleSubmit}
+              isSubmitting={isSubmitting}
             />
         </View>
       </TouchableWithoutFeedback>
